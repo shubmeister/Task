@@ -5,23 +5,20 @@ import db from './db';
 
 const App = () => {
   useEffect(() => {
-    const initDB = async () => {
-      await db.load(); // important!
-    };
-    initDB();
-
     const channel = new BroadcastChannel('sync');
     channel.onmessage = async (msg) => {
       if (msg.data === 'updated') {
-        await db.load(); // reload if needed
+        await db.load();
       }
     };
 
-    return () => channel.close();
+    return () => {
+      channel.close();
+    };
   }, []);
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h1>Patient Registration App</h1>
       <PatientForm />
       <hr />

@@ -5,8 +5,14 @@ const SQLQuery = () => {
   const [patients, setPatients] = useState([]);
 
   const fetchPatients = async () => {
-    const data = await db.getAllPatients();
-    setPatients(data);
+    await db.load();
+    const database = db.getDB();
+    const res = database.exec('SELECT * FROM patients');
+
+    if (res.length > 0) {
+      const values = res[0].values;
+      setPatients(values);
+    }
   };
 
   useEffect(() => {
@@ -24,12 +30,10 @@ const SQLQuery = () => {
 
   return (
     <div>
-      <h2>Registered Patients</h2>
+      <h2>Patient Records</h2>
       <ul>
-        {patients.map((p, index) => (
-          <li key={index}>
-            {p.patientid} - {p.name} ({p.age}, {p.gender}) - {p.address}
-          </li>
+        {patients.map((row, i) => (
+          <li key={i}>{row.join(', ')}</li>
         ))}
       </ul>
     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import db from './db';
 
 const PatientForm = () => {
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     patientid: '',
     name: '',
     age: '',
@@ -11,33 +11,37 @@ const PatientForm = () => {
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    await db.load();
+    const database = db.getDB();
 
-    await db.insertPatient({
-      ...formData,
-      age: parseInt(formData.age),
-      patientid: parseInt(formData.patientid),
-    });
+    database.run(`
+      INSERT INTO patients (patientid, name, age, gender, address)
+      VALUES (?, ?, ?, ?, ?)
+    `, [
+      form.patientid,
+      form.name,
+      parseInt(form.age),
+      form.gender,
+      form.address,
+    ]);
 
     const channel = new BroadcastChannel('sync');
     channel.postMessage('updated');
-    channel.close();
-
-    alert('Patient added!');
-    setFormData({ patientid: '', name: '', age: '', gender: '', address: '' });
+    setForm({ patientid: '', name: '', age: '', gender: '', address: '' });
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <input name="patientid" placeholder="Patient ID" value={formData.patientid} onChange={handleChange} required />
-      <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-      <input name="age" placeholder="Age" value={formData.age} onChange={handleChange} required />
-      <input name="gender" placeholder="Gender" value={formData.gender} onChange={handleChange} required />
-      <input name="address" placeholder="Address" value={formData.address} onChange={handleChange} required />
+      <input name="patientid" value={form.patientid} onChange={handleChange} placeholder="Patient ID" required /><br />
+      <input name="name" value={form.name} onChange={handleChange} placeholder="Name" required /><br />
+      <input name="age" value={form.age} onChange={handleChange} placeholder="Age" required /><br />
+      <input name="gender" value={form.gender} onChange={handleChange} placeholder="Gender" /><br />
+      <input name="address" value={form.address} onChange={handleChange} placeholder="Address" /><br />
       <button type="submit">Register</button>
     </form>
   );
