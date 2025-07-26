@@ -1,39 +1,37 @@
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import db from './db';
 
 const SQLQuery = () => {
-  const [query, setQuery] = useState('SELECT * FROM patients;');
-  const [results, setResults] = useState([]);
+  const [patients, setPatients] = useState([]);
 
-  const handleRun = async () => {
-    try {
-      const res = await db.query(query);
-      setResults(res);
-    } catch (e) {
-      alert('Error: ' + e.message);
-    }
+  const fetchPatients = async () => {
+    const data = await db.getAllPatients();
+    setPatients(data);
   };
+
+  useEffect(() => {
+    fetchPatients();
+
+    const channel = new BroadcastChannel('sync');
+    channel.onmessage = (msg) => {
+      if (msg.data === 'updated') {
+        fetchPatients();
+      }
+    };
+
+    return () => channel.close();
+  }, []);
 
   return (
     <div>
-      <h2>Run SQL Query</h2>
-      <textarea value={query} onChange={e => setQuery(e.target.value)} rows="3" cols="50" />
-      <br />
-      <button onClick={handleRun}>Run</button>
-
-      {results.length > 0 && (
-        <table border="1">
-          <thead>
-            <tr>{Object.keys(results[0]).map((key) => <th key={key}>{key}</th>)}</tr>
-          </thead>
-          <tbody>
-            {results.map((row, i) => (
-              <tr key={i}>{Object.values(row).map((val, j) => <td key={j}>{val}</td>)}</tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <h2>Registered Patients</h2>
+      <ul>
+        {patients.map((p, index) => (
+          <li key={index}>
+            {p.patientid} - {p.name} ({p.age}, {p.gender}) - {p.address}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
